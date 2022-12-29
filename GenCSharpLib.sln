@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33205.214
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenCSharpLib", "GenCSharpLib\GenCSharpLib.csproj", "{83FD1D67-7D15-4570-A2FE-51CCA16A0C53}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{83FD1D67-7D15-4570-A2FE-51CCA16A0C53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83FD1D67-7D15-4570-A2FE-51CCA16A0C53}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83FD1D67-7D15-4570-A2FE-51CCA16A0C53}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83FD1D67-7D15-4570-A2FE-51CCA16A0C53}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D57257F2-DD04-40C3-9134-5D0CD316250F}
+	EndGlobalSection
+EndGlobal
