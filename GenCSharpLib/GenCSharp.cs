@@ -14,6 +14,9 @@ namespace GenCSharpLib
 
 		private bool _DefaultTrue = false; 
 
+		//Do I need this?
+		private List<string> _ECMATypes = new() { "Date", "Math", "Object", "RegExp" };
+
 		public GenCSharp()
 		{
 			if (File.Exists(Directory.GetCurrentDirectory() + "/debugGenCSharp.txt"))
@@ -258,7 +261,8 @@ namespace GenCSharpLib
 						{
 							sb.Append($" : ");
 							TType arrL =  _Main.TType.Find((e) => e.Name == tType.Inheritance);
-							if (arrL != null)
+							bool nameMatch = _ECMATypes.Contains(tType.Inheritance);
+							if (arrL != null || nameMatch)
 								sb.Append($"{tType.Inheritance}");
 							if (tType.ListAdditionalInheritance.Count != 0)
 							{
@@ -312,7 +316,8 @@ namespace GenCSharpLib
 						{
 							sb.Append($" : ");
 							TType arrL = _Main.TType.Find((e) => e.Name == tType.Inheritance);
-							if (arrL != null)
+							bool nameMatch = _ECMATypes.Contains(tType.Inheritance);
+							if (arrL != null || nameMatch)
 								sb.Append($"{tType.Inheritance}");
 							
 							if (tType.ListAdditionalInheritance.Count != 0)
@@ -671,8 +676,23 @@ namespace GenCSharpLib
 						}
 						break;
 					}
-				//TODO?!
 				case "iterable":
+					{
+						//Todo with multiple IDLType. How?
+						//
+						//foreach (WebIDLType item in member.IDLType)
+						//{
+						sb.Append($"public ");
+							ProcessWebIDLType(ref sb, member.IDLType?[0]);
+							sb.Append(" this[int i]\n");
+							sb.Append("\t{\n");
+							sb.Append($"\t\tget {{ throw new System.NotImplementedException(); }}\n");
+							sb.Append($"\t\tset {{ throw new System.NotImplementedException(); }}\n");
+							sb.Append("\t}\n");
+						//}
+						break;
+					}
+				//TODO?!
 				case "maplike":
 					return;
 				default:
@@ -1127,7 +1147,8 @@ namespace GenCSharpLib
 			if (char.IsUpper(str[0]) && en == false)
 			{
 				TType arrL = _Main.TType.Find((e) => e.Name == str);
-				if (arrL == null)
+				bool nameMatch = _ECMATypes.Contains(str);
+				if (arrL == null && nameMatch == false)
 				{
 					str = $"CSharpToJavaScript.Utils.Unsupported /*{str}*/";
 				}
