@@ -249,13 +249,13 @@ namespace GenCSharpLib
 				case "callback interface":
 				case "interface mixin":
 					{
+						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{tType.Name}/*'/>");
 						string exist = _ListNamesForToAttr.Find(e => e == tType.Name);
 						if (exist == null)
 						{
 							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
 							_ListNamesForToAttr.Add(tType.Name);
 						}
-						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{tType.Name}/*'/>");
 						sb.Append($"public partial interface {tType.Name}");
 						if (tType.Inheritance != null)
 						{
@@ -297,6 +297,7 @@ namespace GenCSharpLib
 				case "interface":
 				case "dictionary":
 					{
+						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{tType.Name}/*'/>");
 						string exist = _ListNamesForToAttr.Find(e => e == tType.Name);
 						if (exist == null)
 						{
@@ -310,7 +311,6 @@ namespace GenCSharpLib
 
 							_ListNamesForToAttr.Add(tType.Name);
 						}
-						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{tType.Name}/*'/>");
 						sb.Append($"public partial class {tType.Name}");
 						if (tType.Inheritance != null)
 						{
@@ -352,13 +352,13 @@ namespace GenCSharpLib
 					}
 				case "callback":
 					{
+						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{tType.Name}/*'/>");
 						string exist = _ListNamesForToAttr.Find(e => e == tType.Name);
 						if (exist == null) 
 						{
 							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
 							_ListNamesForToAttr.Add(tType.Name);
 						}
-						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{tType.Name}/*'/>");
 						sb.Append($"public struct {tType.Name}");
 						sb.AppendLine();
 						sb.Append("{");
@@ -492,11 +492,11 @@ namespace GenCSharpLib
 			{
 				case "attribute": 
 					{
+						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{_CurrentTType.Name + member.Name.FirstCharToUpperCase()}/*'/>");
 						if (_DefaultTrue)
 						{
 							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
 						}
-						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{_CurrentTType.Name + member.Name.FirstCharToUpperCase()}/*'/>");
 						sb.Append("\t");
 
 						sb.Append($"public ");
@@ -547,11 +547,11 @@ namespace GenCSharpLib
 					}
 				case "const": 
 					{
+						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{_CurrentTType.Name + member.Name.FirstCharToUpperCase()}/*'/>");
 						if (_DefaultTrue)
 						{
 							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
 						}
-						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{_CurrentTType.Name + member.Name.FirstCharToUpperCase()}/*'/>");
 						sb.Append("\t");
 
 						sb.Append($"public const ");
@@ -567,11 +567,11 @@ namespace GenCSharpLib
 					}
 				case "field":
 					{
+						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{_CurrentTType.Name + member.Name.FirstCharToUpperCase()}/*'/>");
 						if (_DefaultTrue)
 						{
 							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
 						}
-						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{_CurrentTType.Name + member.Name.FirstCharToUpperCase()}/*'/>");
 						sb.Append("\t");
 
 						sb.Append($"public ");
@@ -596,7 +596,7 @@ namespace GenCSharpLib
 					}
 				case "constructor": 
 					{
-						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{_CurrentTType.Name}/*'/>");
+						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{_CurrentTType.Name}{_CurrentTType.Name}/*'/>");
 						sb.Append("\t");
 						sb.Append($"public ");
 
@@ -626,11 +626,11 @@ namespace GenCSharpLib
 							member.Special == "deleter")
 							return;
 
+						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{_CurrentTType.Name + member.Name.FirstCharToUpperCase()}/*'/>");
 						if (_DefaultTrue)
 						{
 							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
 						}
-						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{_CurrentTType.Name + member.Name.FirstCharToUpperCase()}/*'/>");
 						sb.Append("\t");
 
 						sb.Append($"public ");
@@ -684,11 +684,11 @@ namespace GenCSharpLib
 						//{
 						sb.Append($"public ");
 							ProcessWebIDLType(ref sb, member.IDLType?[0]);
-							sb.Append(" this[int i]\n");
-							sb.Append("\t{\n");
-							sb.Append($"\t\tget {{ throw new System.NotImplementedException(); }}\n");
-							sb.Append($"\t\tset {{ throw new System.NotImplementedException(); }}\n");
-							sb.Append("\t}\n");
+							sb.Append(" this[int i] ");
+							sb.Append(" { ");
+							sb.Append($" get {{ throw new System.NotImplementedException(); }} ");
+							sb.Append($" set {{ throw new System.NotImplementedException(); }} ");
+							sb.Append(" } ");
 						//}
 						break;
 					}
