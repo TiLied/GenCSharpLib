@@ -39,6 +39,7 @@ namespace GenCSharpLib
 
 			StringBuilder sb = new();
 			sb.AppendLine($"//{DateTime.Now}");
+			sb.AppendLine("using static CSharpToJavaScript.APIs.JS.GlobalObject;");
 			sb.AppendLine("using CSharpToJavaScript.Utils;");
 			sb.AppendLine("using System.Collections.Generic;");
 			sb.AppendLine("using System.Threading.Tasks;");
@@ -1138,8 +1139,7 @@ namespace GenCSharpLib
 
 			if (str == "undefined")
 			{
-				str = $"CSharpToJavaScript.Utils.Unsupported /*{str}*/";
-				//str = $"void";
+				str = $"Undefined";
 				return str;
 			}
 
@@ -1150,7 +1150,7 @@ namespace GenCSharpLib
 				bool nameMatch = _ECMATypes.Contains(str);
 				if (arrL == null && nameMatch == false)
 				{
-					str = $"CSharpToJavaScript.Utils.Unsupported /*{str}*/";
+					str = $"Unsupported /*{str}*/";
 				}
 			}
 
