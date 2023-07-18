@@ -5,7 +5,7 @@ This library is related to [CSharpToJavaScript](https://github.com/TiLied/CSharp
 - Add in Main Method:
 ```csharp
 GenCSharp genCSharp = new();
-genCSharp.GenerateCSFromJson("FULL PATH TO JSON FILE", "FULL OUTPUT PATH");
+await genCSharp.GenerateCSFromJson("FULL PATH TO JSON FILE", "FULL OUTPUT PATH");
 ```
 ## Some Todos
 - [ ] Figure out why some methods did not get generated, like "CreateElement" in "Document".
