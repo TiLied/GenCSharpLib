@@ -302,7 +302,7 @@ namespace GenCSharpLib
 				case "interface":
 				case "dictionary":
 					{
-						if(tType.Name == "console")
+						if (tType.Name == "console")
 							AddXmlRef(ref sb, tType.Name.FirstCharToUpperCase());
 						else
 							AddXmlRef(ref sb, tType.Name);
@@ -310,9 +310,10 @@ namespace GenCSharpLib
 						string exist = _ListNamesForToAttr.Find(e => e == tType.Name);
 						if (exist == null)
 						{
-							if (tType.Name.StartsWith("HTML") || 
-								tType.Name.StartsWith("Text") || 
-								tType.Name == "Window")
+							if (tType.Name.StartsWith("HTML") ||
+								tType.Name.StartsWith("Text") ||
+								tType.Name == "Window" ||
+								tType.Name == "CustomEvent")
 							{
 								sb.AppendLine($"[To(ToAttribute.Default)]");
 								_ListNamesWithDefaultAttr.Add(tType.Name);
