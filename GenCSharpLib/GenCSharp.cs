@@ -1,12 +1,11 @@
-﻿using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 
 namespace GenCSharpLib
 {
-	public class GenCSharp
+	public class GenCSharp : ILog
 	{
+		private readonly ILog? _Log = null;
 		private string _Output = string.Empty;
 
 		private Welcome _Main = new();
@@ -14,18 +13,16 @@ namespace GenCSharpLib
 		private TType _CurrentTType = new();
 		private List<string> _ListNamesForToAttr = new();
 		private List<string> _ListNamesWithDefaultAttr = new();
+		private List<TType> _ListOfTypeDefs = new();
 
 		//Do I need this?
-		private List<string> _ECMATypes = new() { "Date", "Math", "Object", "RegExp" };
+		private List<string> _ECMATypes = new() { "Date", "Math", "Object", "RegExp", "Number" };
 
+
+		private bool _OneForDOMParser = false;
 		public GenCSharp()
 		{
-			if (File.Exists(Directory.GetCurrentDirectory() + "/debugGenCSharp.txt"))
-				File.Delete(Directory.GetCurrentDirectory() + "/debugGenCSharp.txt");
-
-			Trace.Listeners.Add(new TextWriterTraceListener("debugGenCSharp.txt"));
-			Trace.AutoFlush = true;
-			Trace.Listeners.Add(new ConsoleTraceListener());
+			_Log = this;
 		}
 
 		public async Task GenerateCSFromJson(string path, string output)
@@ -50,6 +47,11 @@ namespace GenCSharpLib
 			sb.AppendLine($"namespace CSharpToJavaScript.APIs.JS;");
 			sb.AppendLine();
 
+			//HOW TO DELETE DUPLICATES???????????????????
+			//TODO!!!!!!!!!!!!!!!
+			//Nothing is working!
+			//_Main.TType = _Main.TType.Union(_Main.TType).ToList();
+
 			int length = _Main.TType.Count;
 
 			for (int i = 0; i < length; i++)
@@ -63,9 +65,18 @@ namespace GenCSharpLib
 					if (target != null && includes != null)
 						target.ListAdditionalInheritance.Add(includes);
 				}
+				if (_Main.TType[i].Type == "typedef")
+				{
+					_ListOfTypeDefs.Add(_Main.TType[i]);
+				}
+			}
 
+			for (int i = 0; i < length; i++)
+			{
 				ResolveTypeDef(ref sb, _Main.TType[i]);
 			}
+			
+			sb.AppendLine("using WindowProxy = Window;");
 
 			sb.AppendLine();
 			
@@ -76,7 +87,7 @@ namespace GenCSharpLib
 			}
 
 			await File.WriteAllTextAsync(Path.Combine(output, "JS.generated.cs"), sb.ToString());
-			Log("--- Done!");
+			_Log.WriteLine("--- Done!");
 		}
 		
 		private void ResolveUnion(TType main)
@@ -158,7 +169,7 @@ namespace GenCSharpLib
 			{
 				case "typedef":
 					{
-						//ListTypedefs.Add(arr);
+						_CurrentTType = tType;
 
 						sb.Append($"using {tType.Name} = ");
 
@@ -167,6 +178,7 @@ namespace GenCSharpLib
 						sb.Append(";");
 
 						sb.AppendLine();
+						
 						break;
 					}
 				default:
@@ -271,7 +283,8 @@ namespace GenCSharpLib
 								sb.Append($"{tType.Inheritance}");
 							if (tType.ListAdditionalInheritance.Count != 0)
 							{
-								sb.Append($", ");
+								if (arrL != null || nameMatch)
+									sb.Append($", ");
 								foreach (TType item in tType.ListAdditionalInheritance)
 								{
 									sb.Append($"{item.Name}, ");
@@ -334,7 +347,8 @@ namespace GenCSharpLib
 							
 							if (tType.ListAdditionalInheritance.Count != 0)
 							{
-								sb.Append($", ");
+								if (arrL != null || nameMatch)
+									sb.Append($", ");
 								foreach (TType item in tType.ListAdditionalInheritance)
 								{
 									sb.Append($"{item.Name}, ");
@@ -356,6 +370,23 @@ namespace GenCSharpLib
 							ProcessMember(ref sb, mem);
 							sb.AppendLine();
 						}
+
+							foreach (Member mem in tType.Members)
+							{
+								if (mem.Type == "constructor")
+								{
+									if (mem.Arguments.Count == 0)
+										break;
+									if (mem.Arguments.Count >= 1)
+									{
+										sb.Append("\t");
+										sb.Append($"public {_CurrentTType.Name}() {{ }}");
+										sb.AppendLine();
+										break;
+									}
+								}
+							}
+						
 
 						sb.Append("}");
 						sb.AppendLine();
@@ -464,7 +495,7 @@ namespace GenCSharpLib
 						break;
 					}
 				default:
-					Log($"{tType.Type}");
+					_Log.WriteLine($"{tType.Type}");
 					break;
 			}
 		}
@@ -536,7 +567,7 @@ namespace GenCSharpLib
 						break;
 					}
 				default:
-					Log($"{value.Type}");
+					_Log.WriteLine($"{value.Type}");
 					break;
 			}
 		}
@@ -663,6 +694,15 @@ namespace GenCSharpLib
 					}
 				case "constructor": 
 					{
+						if (_CurrentTType.Name == "DOMParser" && _OneForDOMParser == false)
+						{
+							_OneForDOMParser = true;
+						}
+						else 
+						{
+							break;
+						}
+
 						string _name = _CurrentTType.Name + _CurrentTType.Name;
 						AddXmlRef(ref sb, _name);
 						sb.Append("\t");
@@ -769,10 +809,11 @@ namespace GenCSharpLib
 						break;
 					}
 				//TODO?!
+				case "setlike":
 				case "maplike":
 					return;
 				default:
-					Log($"{member.Type}");
+					_Log.WriteLine($"{member.Type}");
 					break;
 			}
 		}
@@ -790,6 +831,7 @@ namespace GenCSharpLib
 									sb.Append(ProcessString(webIDLType.IDLTypeStr));
 									break;
 								}
+							case "ObservableArray":
 							case "FrozenArray":
 								{
 									ProcessWebIDLType(ref sb, webIDLType.IDLType.First());
@@ -810,8 +852,15 @@ namespace GenCSharpLib
 										sb.Append(">");
 									break;
 								}
+							case "sequence":
+								{
+									sb.Append("List<");
+									ProcessWebIDLType(ref sb, webIDLType.IDLType.First());
+									sb.Append(">");
+									break;
+								}
 							default:
-								Log($"{webIDLType.Type} {webIDLType.Generic}");
+								_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 								break;
 						}
 
@@ -836,7 +885,7 @@ namespace GenCSharpLib
 									break;
 								}
 							default:
-								Log($"{webIDLType.Type} {webIDLType.Generic}");
+								_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 								break;
 						}
 
@@ -851,7 +900,11 @@ namespace GenCSharpLib
 						{
 							case "":
 								{
-									sb.Append(ProcessString(webIDLType.IDLTypeStr));
+									if (webIDLType.IDLTypeStr == null)
+										sb.Append(ProcessString(webIDLType.IDLType.First().IDLTypeStr));
+									else
+										sb.Append(ProcessString(webIDLType.IDLTypeStr));
+
 									break;
 								}
 							case "sequence":
@@ -875,8 +928,26 @@ namespace GenCSharpLib
 										sb.Append(">");
 									break;
 								}
+							case "FrozenArray":
+								{
+									ProcessWebIDLType(ref sb, webIDLType.IDLType.First());
+									sb.Append("[]");
+									break;
+								}
+							case "record":
+								{
+									sb.Append("Dictionary<");
+									foreach (WebIDLType _item in webIDLType.IDLType)
+									{
+										ProcessWebIDLType(ref sb, _item);
+										sb.Append(", ");
+									}
+									sb = sb.Remove(sb.Length - 2, 2);
+									sb.Append(">");
+									break;
+								}
 							default:
-								Log($"{webIDLType.Type} {webIDLType.Generic}");
+								_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 								break;
 						}
 
@@ -891,7 +962,11 @@ namespace GenCSharpLib
 						{
 							case "":
 								{
-									sb.Append(ProcessString(webIDLType.IDLTypeStr));
+									if (webIDLType.IDLTypeStr == null)
+										sb.Append(ProcessString(webIDLType.IDLType.First().IDLTypeStr));
+									else
+										sb.Append(ProcessString(webIDLType.IDLTypeStr));
+
 									break;
 								}
 							case "FrozenArray":
@@ -922,7 +997,7 @@ namespace GenCSharpLib
 									break;
 								}
 							default:
-								Log($"{webIDLType.Type} {webIDLType.Generic}");
+								_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 								break;
 						}
 
@@ -953,8 +1028,34 @@ namespace GenCSharpLib
 									sb.Append(">");
 									break;
 								}
+							case "record":
+								{
+									sb.Append("Dictionary<");
+									foreach (WebIDLType _item in webIDLType.IDLType)
+									{
+										ProcessWebIDLType(ref sb, _item);
+										sb.Append(", ");
+									}
+									sb = sb.Remove(sb.Length - 2, 2);
+									sb.Append(">");
+									break;
+								}
+							case "Promise":
+								{
+									sb.Append("Task<");
+									ProcessWebIDLType(ref sb, webIDLType.IDLType.First());
+									string str = sb.ToString();
+									if (str.EndsWith("void"))
+									{
+										str = str.Remove(str.Length - 5, 5);
+										sb = new(str);
+									}
+									else
+										sb.Append(">");
+									break;
+								}
 							default:
-								Log($"{webIDLType.Type} {webIDLType.Generic}");
+								_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 								break;
 						}
 
@@ -969,7 +1070,11 @@ namespace GenCSharpLib
 						{
 							case "":
 								{
-									sb.Append(ProcessString(webIDLType.IDLTypeStr));
+									if (webIDLType.IDLTypeStr == null) 
+										sb.Append(ProcessString(webIDLType.IDLType.First().IDLTypeStr));
+									else
+										sb.Append(ProcessString(webIDLType.IDLTypeStr));
+
 									break;
 								}
 							case "sequence":
@@ -991,8 +1096,22 @@ namespace GenCSharpLib
 									sb.Append(">");
 									break;
 								}
+							case "Promise":
+								{
+									sb.Append("Task<");
+									ProcessWebIDLType(ref sb, webIDLType.IDLType.First());
+									string str = sb.ToString();
+									if (str.EndsWith("void"))
+									{
+										str = str.Remove(str.Length - 5, 5);
+										sb = new(str);
+									}
+									else
+										sb.Append(">");
+									break;
+								}
 							default:
-								Log($"{webIDLType.Type} {webIDLType.Generic}");
+								_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 								break;
 						}
 						break;
@@ -1026,7 +1145,7 @@ namespace GenCSharpLib
 								break;
 							}
 						default:
-							Log($"{webIDLType.Type} {webIDLType.Generic}");
+							_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 							break;
 					}
 
@@ -1056,7 +1175,8 @@ namespace GenCSharpLib
 							argument.Name == "namespace" ||
 							argument.Name == "event" ||
 							argument.Name == "string" ||
-							argument.Name == "default")
+							argument.Name == "default" ||
+							argument.Name == "interface")
 						{
 							sb.Append($" {argument.Name}_");
 						}
@@ -1077,7 +1197,7 @@ namespace GenCSharpLib
 						break;
 					}
 				default:
-					Log($"{argument.Type}");
+					_Log.WriteLine($"{argument.Type}");
 					break;
 			}
 		}
@@ -1130,6 +1250,12 @@ namespace GenCSharpLib
 			}
 			if (str.Contains("unrestricted double"))
 			{
+				str = "double";
+				return str;
+			}
+			if (str.Contains("bigint"))
+			{
+				//TODO! BigInt!
 				str = "double";
 				return str;
 			}
@@ -1194,6 +1320,7 @@ namespace GenCSharpLib
 				str.Contains("short") ||
 				str.Contains("float"))
 			{
+				str = "Number";
 				return str;
 			}
 
@@ -1201,7 +1328,6 @@ namespace GenCSharpLib
 			//WindowProxy
 			if (str.Contains("WindowProxy"))
 			{
-				str = "Window";
 				return str;
 			}
 
@@ -1227,6 +1353,17 @@ namespace GenCSharpLib
 				{
 					str = $"Unsupported /*{str}*/";
 				}
+				else 
+				{
+					if (_CurrentTType.Type == "typedef")
+					{
+						TType typeDef = _ListOfTypeDefs.Find((e) => e.Name == str);
+						if (typeDef != null)
+						{
+							str = $"Unsupported /*{str}*/";
+						}
+					}
+				}
 			}
 
 			return str;
@@ -1248,11 +1385,6 @@ namespace GenCSharpLib
 				sb.AppendLine($"///<include file='Utils/Docs2/{name}/{name}.xml' path='docs/{name}/*'/>");
 			if (File.Exists($"{directory}\\Docs\\{name}\\{name}.generated.xml"))
 				sb.AppendLine($"///<include file='Utils/Docs/{name}/{name}.generated.xml' path='docs/{name}/*'/>");
-		}
-
-		private static void Log(string message, [CallerFilePath] string? file = null, [CallerMemberName] string? member = null, [CallerLineNumber] int line = 0)
-		{
-			Trace.WriteLine($"({line}):{Path.GetFileName(file)} {member}: {message}");
 		}
 	}
 }
