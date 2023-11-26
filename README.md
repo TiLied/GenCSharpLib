@@ -41,3 +41,8 @@ VS Extension using CLI: https://github.com/TiLied/CSTOJS_VS_Ext
 
 Website/documentation: https://github.com/TiLied/CSTOJS_Pages
 - Blazor WebAssembly: https://github.com/TiLied/CSTOJS_BWA
+
+
+## Thanks for packages and content <3
+[webidl2.js](https://github.com/w3c/webidl2.js/)
+
