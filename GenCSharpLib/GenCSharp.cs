@@ -1,5 +1,10 @@
-﻿using System.Text;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace GenCSharpLib
 {
@@ -16,7 +21,7 @@ namespace GenCSharpLib
 		private List<TType> _ListOfTypeDefs = new();
 
 		//Do I need this?
-		private List<string> _ECMATypes = new() { "Date", "Math", "Object", "RegExp", "Number" };
+		private readonly List<string> _ECMATypes = new() { "Date", "Math", "Object", "RegExp", "Number" };
 
 
 		private bool _OneForDOMParser = false;
