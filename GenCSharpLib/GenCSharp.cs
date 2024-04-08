@@ -11,7 +11,7 @@ namespace GenCSharpLib
 {
 	public class GenCSharp : ILog
 	{
-		private readonly ILog? _Log = null;
+		private readonly ILog _Log;
 		private string _Output = string.Empty;
 
 		private Welcome _Main = new();
@@ -41,7 +41,7 @@ namespace GenCSharpLib
 
 			Welcome? welcome = JsonSerializer.Deserialize<Welcome>(jsonString, serializeOptions);
 
-			_Main = welcome;
+			_Main = welcome ?? new();
 
 			StringBuilder sb = new();
 			sb.AppendLine($"//{DateTime.Now}");
@@ -85,8 +85,8 @@ namespace GenCSharpLib
 
 				if (_Main.TType[i].Type == "includes")
 				{
-					TType target = _Main.TType.Find((e) => e.Name == _Main.TType[i].Target);
-					TType includes = _Main.TType.Find((e) => e.Name == _Main.TType[i].Includes);
+					TType? target = _Main.TType.Find((e) => e.Name == _Main.TType[i].Target);
+					TType? includes = _Main.TType.Find((e) => e.Name == _Main.TType[i].Includes);
 					if (target != null && includes != null)
 						target.ListAdditionalInheritance.Add(includes);
 				}
@@ -109,8 +109,12 @@ namespace GenCSharpLib
 				sb.AppendLine();
 			}
 
-			await File.WriteAllTextAsync(Path.Combine(output, "JS.generated.cs"), sb.ToString());
-			_Log?.WriteLine("--- Done!");
+			if(File.Exists(Path.Combine(output, "JS.generated.cs")))
+				await File.WriteAllTextAsync(Path.Combine(output, "JS1.generated.cs"), sb.ToString());
+			else
+				await File.WriteAllTextAsync(Path.Combine(output, "JS.generated.cs"), sb.ToString());
+			
+			_Log.WriteLine("--- Done!");
 		}
 		
 		private void ResolveUnion(TType main)
@@ -268,6 +272,7 @@ namespace GenCSharpLib
 				case "enum":
 					{
 						AddXmlRef(ref sb, tType.Name);
+						sb.AppendLine($"[To(ToAttribute.None)]");
 						sb.Append($"public enum {tType.Name}");
 						sb.AppendLine();
 						sb.Append("{");
@@ -275,6 +280,8 @@ namespace GenCSharpLib
 
 						foreach (Value val in tType.Values)
 						{
+							sb.Append("\t");
+							sb.AppendLine($"[Value(\"{val.ValueObj.ToString()}\")]");
 							sb.Append("\t");
 							ProcessValue(ref sb, val);
 							sb.Append(",");
@@ -529,7 +536,7 @@ namespace GenCSharpLib
 						break;
 					}
 				default:
-					_Log?.WriteLine($"{tType.Type}");
+					_Log.WriteLine($"{tType.Type}");
 					break;
 			}
 		}
@@ -601,7 +608,7 @@ namespace GenCSharpLib
 						break;
 					}
 				default:
-					_Log?.WriteLine($"{value.Type}");
+					_Log.WriteLine($"{value.Type}");
 					break;
 			}
 		}
@@ -849,7 +856,7 @@ namespace GenCSharpLib
 				case "maplike":
 					return;
 				default:
-					_Log?.WriteLine($"{member.Type}");
+					_Log.WriteLine($"{member.Type}");
 					break;
 			}
 		}
@@ -896,7 +903,7 @@ namespace GenCSharpLib
 									break;
 								}
 							default:
-								_Log?.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
+								_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 								break;
 						}
 
@@ -921,7 +928,7 @@ namespace GenCSharpLib
 									break;
 								}
 							default:
-								_Log?.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
+								_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 								break;
 						}
 
@@ -983,7 +990,7 @@ namespace GenCSharpLib
 									break;
 								}
 							default:
-								_Log?.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
+								_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 								break;
 						}
 
@@ -1033,7 +1040,7 @@ namespace GenCSharpLib
 									break;
 								}
 							default:
-								_Log?.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
+								_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 								break;
 						}
 
@@ -1091,7 +1098,7 @@ namespace GenCSharpLib
 									break;
 								}
 							default:
-								_Log?.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
+								_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 								break;
 						}
 
@@ -1147,7 +1154,7 @@ namespace GenCSharpLib
 									break;
 								}
 							default:
-								_Log?.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
+								_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 								break;
 						}
 						break;
@@ -1181,7 +1188,7 @@ namespace GenCSharpLib
 								break;
 							}
 						default:
-							_Log?.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
+							_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 							break;
 					}
 
@@ -1233,7 +1240,7 @@ namespace GenCSharpLib
 						break;
 					}
 				default:
-					_Log?.WriteLine($"{argument.Type}");
+					_Log.WriteLine($"{argument.Type}");
 					break;
 			}
 		}
