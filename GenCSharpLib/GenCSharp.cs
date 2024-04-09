@@ -62,8 +62,11 @@ namespace GenCSharpLib
 
 			sb.AppendLine();
 
-
-			
+			//
+			//
+			//Not working, because classes/interfaces can be both partial and not)
+			//TODO!
+			/*
 			List<TType> all = _Main.TType.DistinctBy((i) => { return i.Name; }).ToList();
 			List<TType> par = all.Select((i) => { if (i.Partial == true) return i; else return null; }).ToList();
 			foreach (TType item in par)
@@ -75,7 +78,10 @@ namespace GenCSharpLib
 			par2.RemoveAll((i) => i == null);
 
 			_Main.TType = all.Concat(par2).ToList();
+			*/
 
+			//var a = _Main.TType.Select((i) => { if (i.Name == "Window") return i; else return null; }).ToList();
+			//a.RemoveAll((i) => i == null);
 
 			int length = _Main.TType.Count;
 
@@ -1249,7 +1255,7 @@ namespace GenCSharpLib
 
 		private string ProcessString(string str, bool en = false)
 		{
-			if( str.Contains("DOMString") ||
+			if (str.Contains("DOMString") ||
 				str.Contains("USVString") ||
 				str.Contains("ByteString") ||
 				str.Contains("CSSOMString"))
