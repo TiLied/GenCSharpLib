@@ -1,18 +1,9 @@
 # GenCSharpLib
 This library is related to [CSharpToJavaScript](https://github.com/TiLied/CSharpToJavaScript) for generating c# files from webidl.
 ## How to use
-- Download standards:
-```csharp
-GetStandards getStandards = new();
-await getStandards.GetThroughWeb("FULL STANDARDS OUTPUT PATH");	
-```
-- Add any missing standards with the extension "raw.txt" as html file in "FULL STANDARDS OUTPUT PATH", like all from [whatwg](https://github.com/whatwg) etc.
-- Convert "raw.txt" to webidl only:
-```csharp
-GetStandards getStandards = new();
-await getStandards.GetWebIdl("FULL STANDARDS OUTPUT PATH");
-```
-- Convert webidl to json files using [webidl2.js](https://github.com/w3c/webidl2.js/). This step requires a lot of manual editing, like deleting old versions.
+- Download idls from [wpt/interfaces](https://github.com/web-platform-tests/wpt/tree/master/interfaces). See also: [webref](https://github.com/w3c/webref), [wpt](https://github.com/web-platform-tests/wpt), [reffy](https://github.com/w3c/reffy).
+- Convert webidl to json files using [webidl2.js](https://github.com/w3c/webidl2.js/). ~This step requires a lot of manual editing, like deleting old versions.~
+- Make sure to ignore "*.tentative.idl"!
 - Make sure that json starts with :
 ```
 {
@@ -45,4 +36,6 @@ Website/documentation: https://github.com/TiLied/CSTOJS_Pages
 
 ## Thanks for packages and content <3
 [webidl2.js](https://github.com/w3c/webidl2.js/)
+
+[web-platform-tests](https://github.com/web-platform-tests/)
 
