@@ -57,14 +57,18 @@ namespace GenCSharpLib
 			sb.AppendLine("//");
 
 			sb.AppendLine("using WindowProxy = Window;");
-
+			sb.AppendLine("using USVString = string;");
+			sb.AppendLine("using ByteString = string;");
+			sb.AppendLine("using DOMString = string;");
+			
 			sb.AppendLine("//");
 
 			sb.AppendLine();
 
 			//
 			//
-			//Not working, because classes/interfaces can be both partial and not)
+			//Not working, because classes/interfaces with the same name,
+			//can be both partial and not)
 			//TODO!
 			/*
 			List<TType> all = _Main.TType.DistinctBy((i) => { return i.Name; }).ToList();
@@ -521,7 +525,11 @@ namespace GenCSharpLib
 							if (member.IDLType.First().IDLTypeStr != null) 
 							{
 								string str = ProcessString(member.IDLType.First().IDLTypeStr);
-								if (str.Contains("Unsupported"))
+								//TODO?
+								if (str == "object")
+									continue;
+								if (str.Contains("Unsupported") || 
+									str.Contains("string"))
 								{
 									if (oneUnsupported == false)
 									{
@@ -564,7 +572,7 @@ namespace GenCSharpLib
 								_str = "_" + _str;
 							}
 						}
-						if (_str.Contains("-"))
+						if (_str.Contains('-'))
 						{
 
 							string[] arr = _str.Split("-");
@@ -574,7 +582,7 @@ namespace GenCSharpLib
 								_str += item.FirstCharToUpperCase();
 							}
 						}
-						if (_str.Contains("/"))
+						if (_str.Contains('/'))
 						{
 
 							string[] arr = _str.Split("/");
@@ -584,7 +592,7 @@ namespace GenCSharpLib
 								_str += item.FirstCharToUpperCase();
 							}
 						}
-						if (_str.Contains("+"))
+						if (_str.Contains('+'))
 						{
 
 							string[] arr = _str.Split("+");
@@ -594,7 +602,7 @@ namespace GenCSharpLib
 								_str += item.FirstCharToUpperCase();
 							}
 						}
-						if (_str.Contains(" "))
+						if (_str.Contains(' '))
 						{
 
 							string[] arr = _str.Split(" ");
@@ -603,6 +611,10 @@ namespace GenCSharpLib
 							{
 								_str += a.FirstCharToUpperCase();
 							}
+						}
+						if (_str.Contains('.'))
+						{
+							_str = _str.Replace(".", "_");
 						}
 						sb.Append(_str.FirstCharToUpperCase());
 						break;
@@ -649,10 +661,15 @@ namespace GenCSharpLib
 
 						ProcessWebIDLType(ref sb, member.IDLType.First());
 
-						if (member.Name == "window")
-							member.Name = "_" + member.Name;
+						string name = member.Name;
 
-						sb.Append($" {member.Name.FirstCharToUpperCase()} ");
+						if (name == "window")
+							name = "_" + name;
+
+						if (name.Contains('-'))
+							name = name.Replace("-", "_");
+
+						sb.Append($" {name.FirstCharToUpperCase()} ");
 
 						if (member.Readonly! == true)
 						{
@@ -1045,6 +1062,18 @@ namespace GenCSharpLib
 									sb.Append(">");
 									break;
 								}
+							case "record":
+								{
+									sb.Append("Dictionary<");
+									foreach (WebIDLType _item in webIDLType.IDLType)
+									{
+										ProcessWebIDLType(ref sb, _item);
+										sb.Append(", ");
+									}
+									sb = sb.Remove(sb.Length - 2, 2);
+									sb.Append(">");
+									break;
+								}
 							default:
 								_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 								break;
@@ -1225,7 +1254,9 @@ namespace GenCSharpLib
 							argument.Name == "event" ||
 							argument.Name == "string" ||
 							argument.Name == "default" ||
-							argument.Name == "interface")
+							argument.Name == "interface" ||
+							argument.Name == "ref" ||
+							argument.Name == "params")
 						{
 							sb.Append($" {argument.Name}_");
 						}
@@ -1255,12 +1286,14 @@ namespace GenCSharpLib
 
 		private string ProcessString(string str, bool en = false)
 		{
-			if (str.Contains("DOMString") ||
-				str.Contains("USVString") ||
+			if (str.Contains("USVString") ||
 				str.Contains("ByteString") ||
-				str.Contains("CSSOMString"))
+				str.Contains("CSSOMString") ||
+				str.Contains("DOMString"))
 			{
-				str = "string";
+				if(_CurrentTType.Type == "typedef")
+					str = "string";
+
 				return str;
 			}
 			if (str.Contains("unsigned long"))

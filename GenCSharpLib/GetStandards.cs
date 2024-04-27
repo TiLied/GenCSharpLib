@@ -124,7 +124,7 @@ namespace GenCSharpLib
 								continue;
 							}
 
-							string path2 = Path.Combine(webidlPath, fileInfo.Name + ".webidl");
+							string path2 = Path.Combine(webidlPath, fileInfo.Name + ".idl");
 
 							await File.WriteAllTextAsync(path2, webidl);
 
@@ -151,7 +151,7 @@ namespace GenCSharpLib
 									localwebidl += "\n";
 									webidl += localwebidl;
 								}
-								string path2 = Path.Combine(webidlPath, fileInfo.Name + ".webidl");
+								string path2 = Path.Combine(webidlPath, fileInfo.Name + ".idl");
 								await File.WriteAllTextAsync(path2, webidl);
 
 								_Log.WriteLine("Webidl with no index! generated: " + path2);
@@ -198,7 +198,7 @@ namespace GenCSharpLib
 									localwebidl += "\n";
 									webidl += localwebidl;
 								}
-								string path2 = Path.Combine(webidlPath, fileInfo.Name + ".webidl");
+								string path2 = Path.Combine(webidlPath, fileInfo.Name + ".idl");
 								await File.WriteAllTextAsync(path2, webidl);
 
 								_Log.WriteLine("Webidl with no index! generated: " + path2);
