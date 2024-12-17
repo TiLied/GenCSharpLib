@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
+
 namespace GenCSharpLib
 {
 	public class GenCSharp : ILog
@@ -44,6 +45,7 @@ namespace GenCSharpLib
 
 			StringBuilder sb = new();
 			sb.AppendLine($"//{DateTime.Now}");
+
 			sb.AppendLine("using static CSharpToJavaScript.APIs.JS.GlobalObject;");
 			sb.AppendLine("using CSharpToJavaScript.Utils;");
 			sb.AppendLine("using System.Collections.Generic;");
@@ -52,10 +54,28 @@ namespace GenCSharpLib
 			sb.AppendLine($"namespace CSharpToJavaScript.APIs.JS;");
 			sb.AppendLine();
 
-			//HOW TO DELETE DUPLICATES???????????????????
-			//TODO!!!!!!!!!!!!!!!
-			//Nothing is working!
-			//_Main.TType = _Main.TType.Union(_Main.TType).ToList();
+			sb.AppendLine("//");
+
+			sb.AppendLine("using WindowProxy = Window;");
+
+			sb.AppendLine("//");
+
+			sb.AppendLine();
+
+
+			
+			List<TType> all = _Main.TType.DistinctBy((i) => { return i.Name; }).ToList();
+			List<TType> par = all.Select((i) => { if (i.Partial == true) return i; else return null; }).ToList();
+			foreach (TType item in par)
+			{
+				if(item != null)
+					all.Remove(item);
+			}
+			List<TType> par2 = _Main.TType.Select((i) => { if (i.Partial == true) return i; else return null; }).ToList();
+			par2.RemoveAll((i) => i == null);
+
+			_Main.TType = all.Concat(par2).ToList();
+
 
 			int length = _Main.TType.Count;
 
@@ -81,8 +101,6 @@ namespace GenCSharpLib
 				ResolveTypeDef(ref sb, _Main.TType[i]);
 			}
 			
-			sb.AppendLine("using WindowProxy = Window;");
-
 			sb.AppendLine();
 			
 			foreach (TType item in _Main.TType)
@@ -92,7 +110,7 @@ namespace GenCSharpLib
 			}
 
 			await File.WriteAllTextAsync(Path.Combine(output, "JS.generated.cs"), sb.ToString());
-			_Log.WriteLine("--- Done!");
+			_Log?.WriteLine("--- Done!");
 		}
 		
 		private void ResolveUnion(TType main)
@@ -436,12 +454,23 @@ namespace GenCSharpLib
 								{
 									_lsb.Append($"<see cref=\"");
 									ProcessWebIDLType(ref _lsb, item);
+
+									string _str = _lsb.ToString();
+									if (_str.EndsWith("[]"))
+									{
+										_lsb.Remove(_lsb.Length - 2, 2);
+									}
 									_lsb.Append($"\"/");
 								}
 								else 
 								{
 									_lsb.Append($"<c>");
 									ProcessWebIDLType(ref _lsb, item);
+									string _str = _lsb.ToString();
+									if (_str.EndsWith("[]"))
+									{
+										_lsb.Remove(_lsb.Length - 2, 2);
+									}
 									_lsb.Append($"</c");
 								}
 
@@ -500,7 +529,7 @@ namespace GenCSharpLib
 						break;
 					}
 				default:
-					_Log.WriteLine($"{tType.Type}");
+					_Log?.WriteLine($"{tType.Type}");
 					break;
 			}
 		}
@@ -572,7 +601,7 @@ namespace GenCSharpLib
 						break;
 					}
 				default:
-					_Log.WriteLine($"{value.Type}");
+					_Log?.WriteLine($"{value.Type}");
 					break;
 			}
 		}
@@ -820,7 +849,7 @@ namespace GenCSharpLib
 				case "maplike":
 					return;
 				default:
-					_Log.WriteLine($"{member.Type}");
+					_Log?.WriteLine($"{member.Type}");
 					break;
 			}
 		}
@@ -867,7 +896,7 @@ namespace GenCSharpLib
 									break;
 								}
 							default:
-								_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
+								_Log?.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 								break;
 						}
 
@@ -892,7 +921,7 @@ namespace GenCSharpLib
 									break;
 								}
 							default:
-								_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
+								_Log?.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 								break;
 						}
 
@@ -954,7 +983,7 @@ namespace GenCSharpLib
 									break;
 								}
 							default:
-								_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
+								_Log?.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 								break;
 						}
 
@@ -1004,7 +1033,7 @@ namespace GenCSharpLib
 									break;
 								}
 							default:
-								_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
+								_Log?.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 								break;
 						}
 
@@ -1062,7 +1091,7 @@ namespace GenCSharpLib
 									break;
 								}
 							default:
-								_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
+								_Log?.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 								break;
 						}
 
@@ -1118,7 +1147,7 @@ namespace GenCSharpLib
 									break;
 								}
 							default:
-								_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
+								_Log?.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 								break;
 						}
 						break;
@@ -1152,7 +1181,7 @@ namespace GenCSharpLib
 								break;
 							}
 						default:
-							_Log.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
+							_Log?.WriteLine($"{webIDLType.Type} {webIDLType.Generic}");
 							break;
 					}
 
@@ -1204,7 +1233,7 @@ namespace GenCSharpLib
 						break;
 					}
 				default:
-					_Log.WriteLine($"{argument.Type}");
+					_Log?.WriteLine($"{argument.Type}");
 					break;
 			}
 		}
@@ -1213,9 +1242,10 @@ namespace GenCSharpLib
 
 		private string ProcessString(string str, bool en = false)
 		{
-			if (str.Contains("DOMString") ||
+			if( str.Contains("DOMString") ||
 				str.Contains("USVString") ||
-				str.Contains("ByteString"))
+				str.Contains("ByteString") ||
+				str.Contains("CSSOMString"))
 			{
 				str = "string";
 				return str;
@@ -1331,13 +1361,15 @@ namespace GenCSharpLib
 				return str;
 			}
 
-
-			//WindowProxy
+			//
+			//
 			if (str.Contains("WindowProxy"))
 			{
 				return str;
 			}
-
+			//
+			//
+			
 			if (str == "")
 			{
 				str = "Empty";
@@ -1379,6 +1411,22 @@ namespace GenCSharpLib
 		private void AddXmlRef(ref StringBuilder sb, string localName)
 		{
 			string name = localName;
+
+			if (name.StartsWith("NonElementParentNode")) 
+			{
+				name = name.Replace("NonElementParentNode", "Document");
+			}
+			if (name.StartsWith("ParentNode")) 
+			{
+				name = name.Replace("ParentNode", "Element");
+			}
+			if (name.StartsWith("ChildNode"))
+			{
+				name = name.Replace("ChildNode", "Element");
+			}
+
+
+
 			if (name.Length >= 60)
 			{
 				name = name.Substring(0, 60);
