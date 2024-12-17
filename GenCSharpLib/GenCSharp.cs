@@ -694,15 +694,17 @@ namespace GenCSharpLib
 					}
 				case "constructor": 
 					{
-						if (_CurrentTType.Name == "DOMParser" && _OneForDOMParser == false)
+						if (_CurrentTType.Name == "DOMParser")
 						{
-							_OneForDOMParser = true;
+							if (_OneForDOMParser == false)
+							{
+								_OneForDOMParser = true;
+							}
+							else
+							{
+								break;
+							}
 						}
-						else 
-						{
-							break;
-						}
-
 						string _name = _CurrentTType.Name + _CurrentTType.Name;
 						AddXmlRef(ref sb, _name);
 						sb.Append("\t");
