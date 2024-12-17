@@ -2,7 +2,6 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
-using System.Xml.Linq;
 
 namespace GenCSharpLib
 {
@@ -14,8 +13,7 @@ namespace GenCSharpLib
 		private int _UnionId = 0;
 		private TType _CurrentTType = new();
 		private List<string> _ListNamesForToAttr = new();
-
-		private bool _DefaultTrue = false; 
+		private List<string> _ListNamesWithDefaultAttr = new();
 
 		//Do I need this?
 		private List<string> _ECMATypes = new() { "Date", "Math", "Object", "RegExp" };
@@ -308,6 +306,7 @@ namespace GenCSharpLib
 							AddXmlRef(ref sb, tType.Name.FirstCharToUpperCase());
 						else
 							AddXmlRef(ref sb, tType.Name);
+
 						string exist = _ListNamesForToAttr.Find(e => e == tType.Name);
 						if (exist == null)
 						{
@@ -316,7 +315,7 @@ namespace GenCSharpLib
 								tType.Name == "Window")
 							{
 								sb.AppendLine($"[To(ToAttribute.Default)]");
-								_DefaultTrue = true;
+								_ListNamesWithDefaultAttr.Add(tType.Name);
 							}
 							else
 								sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
@@ -359,7 +358,6 @@ namespace GenCSharpLib
 
 						sb.Append("}");
 						sb.AppendLine();
-						_DefaultTrue = false;
 						break;
 					}
 				case "callback":
@@ -550,8 +548,11 @@ namespace GenCSharpLib
 					{
 						string _name = _CurrentTType.Name + member.Name.FirstCharToUpperCase();
 						AddXmlRef(ref sb, _name);
-						if (_DefaultTrue)
+
+						string exist = _ListNamesWithDefaultAttr.Find(e => e == _CurrentTType.Name);
+						if (exist != null)
 						{
+							sb.Append("\t");
 							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
 						}
 						sb.Append("\t");
@@ -606,8 +607,11 @@ namespace GenCSharpLib
 					{
 						string _name = _CurrentTType.Name + member.Name.FirstCharToUpperCase();
 						AddXmlRef(ref sb, _name);
-						if (_DefaultTrue)
+
+						string exist = _ListNamesWithDefaultAttr.Find(e => e == _CurrentTType.Name);
+						if (exist != null)
 						{
+							sb.Append("\t");
 							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
 						}
 						sb.Append("\t");
@@ -627,8 +631,11 @@ namespace GenCSharpLib
 					{
 						string _name = _CurrentTType.Name + member.Name.FirstCharToUpperCase();
 						AddXmlRef(ref sb, _name);
-						if (_DefaultTrue)
+
+						string exist = _ListNamesWithDefaultAttr.Find(e => e == _CurrentTType.Name);
+						if (exist != null)
 						{
+							sb.Append("\t");
 							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
 						}
 						sb.Append("\t");
@@ -692,8 +699,11 @@ namespace GenCSharpLib
 						else
 							_name =	_CurrentTType.Name + member.Name.FirstCharToUpperCase();
 						AddXmlRef(ref sb, _name);
-						if (_DefaultTrue)
+
+						string exist = _ListNamesWithDefaultAttr.Find(e => e == _CurrentTType.Name);
+						if (exist != null)
 						{
+							sb.Append("\t");
 							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
 						}
 						sb.Append("\t");
