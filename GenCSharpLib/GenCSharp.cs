@@ -373,6 +373,50 @@ namespace GenCSharpLib
 					}
 				case "UnionStruct":
 					{
+						//
+						//
+						//TODO! better!
+
+						StringBuilder _lsb = new();
+
+						sb.Append($"///<summary>");
+						sb.AppendLine();
+						sb.Append($"///");
+						foreach (Member member in tType.Members)
+						{
+							foreach (WebIDLType item in member.IDLType)
+							{
+								if (item.IDLTypeStr != null)
+								{
+									_lsb.Append($"<see cref=\"");
+									ProcessWebIDLType(ref _lsb, item);
+									_lsb.Append($"\"/");
+								}
+								else 
+								{
+									_lsb.Append($"<c>");
+									ProcessWebIDLType(ref _lsb, item);
+									_lsb.Append($"</c");
+								}
+
+								_lsb.Append($"> or ");
+							}
+						}
+						_lsb.Replace("<", "{");
+						_lsb.Replace(">", "}");
+						_lsb.Replace("{see", "<see");
+						_lsb.Replace("/}", "/>");
+						_lsb.Replace("{c}", "<c>");
+						_lsb.Replace("{/c}", "</c>");
+
+						sb.Append(_lsb.ToString());
+						sb.Remove(sb.Length - 4, 4);
+						sb.AppendLine();
+						sb.Append($"///</summary>");
+
+
+
+						sb.AppendLine();
 						sb.Append($"public struct {tType.Name}");
 						sb.AppendLine();
 						sb.Append("{");
