@@ -159,7 +159,7 @@ namespace GenCSharpLib
 								continue;
 							}
 
-							regexPre = new(@"<pre><code class=('|"")""?idl('|"")""?>([\s\S]+?)</code></pre>");
+							regexPre = new(@"<pre><code class=('|"")?idl('|"")?>([\s\S]+?)</code></pre>");
 							
 							matches = regexPre.Matches(text);
 
