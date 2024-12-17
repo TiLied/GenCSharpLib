@@ -12,6 +12,8 @@ namespace GenCSharpLib
 		private TType _CurrentTType = new();
 		private List<string> _ListNamesForToAttr = new();
 
+		private bool _DefaultTrue = false; 
+
 		public GenCSharp()
 		{
 			if (File.Exists(Directory.GetCurrentDirectory() + "/debugGenCSharp.txt"))
@@ -294,8 +296,11 @@ namespace GenCSharpLib
 						string exist = _ListNamesForToAttr.Find(e => e == tType.Name);
 						if (exist == null)
 						{
-							if(tType.Name.StartsWith("HTML"))
+							if (tType.Name.StartsWith("HTML") || tType.Name.StartsWith("Text"))
+							{
 								sb.AppendLine($"[To(ToAttribute.Default)]");
+								_DefaultTrue = true;
+							}
 							else
 								sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
 
@@ -337,6 +342,7 @@ namespace GenCSharpLib
 
 						sb.Append("}");
 						sb.AppendLine();
+						_DefaultTrue = false;
 						break;
 					}
 				case "callback":
@@ -481,6 +487,10 @@ namespace GenCSharpLib
 			{
 				case "attribute": 
 					{
+						if (_DefaultTrue)
+						{
+							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
+						}
 						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{_CurrentTType.Name + member.Name.FirstCharToUpperCase()}/*'/>");
 						sb.Append("\t");
 
@@ -532,6 +542,10 @@ namespace GenCSharpLib
 					}
 				case "const": 
 					{
+						if (_DefaultTrue)
+						{
+							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
+						}
 						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{_CurrentTType.Name + member.Name.FirstCharToUpperCase()}/*'/>");
 						sb.Append("\t");
 
@@ -548,6 +562,10 @@ namespace GenCSharpLib
 					}
 				case "field":
 					{
+						if (_DefaultTrue)
+						{
+							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
+						}
 						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{_CurrentTType.Name + member.Name.FirstCharToUpperCase()}/*'/>");
 						sb.Append("\t");
 
@@ -602,7 +620,11 @@ namespace GenCSharpLib
 							member.Special == "getter" ||
 							member.Special == "deleter")
 							return;
-						
+
+						if (_DefaultTrue)
+						{
+							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
+						}
 						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{_CurrentTType.Name + member.Name.FirstCharToUpperCase()}/*'/>");
 						sb.Append("\t");
 
