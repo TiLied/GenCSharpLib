@@ -13,6 +13,10 @@ await genCSharp.GenerateCSFromJson("FULL PATH TO JSON FILE", "FULL OUTPUT PATH")
 - [x] ~Figure out what to do with esmascript and "if" how to generate c# files...~  Decided to do by hand, while using CSharpToJavaScript library, [here](https://github.com/TiLied/CSharpToJavaScript/tree/master/CSharpToJavaScript/APIs/JS/Ecma)
 
 ## Related Repository 
-https://github.com/TiLied/CSharpToJavaScript
+CSharpToJavaScript library: https://github.com/TiLied/CSharpToJavaScript
+- Library for generating docs: https://github.com/TiLied/GenDocsLib
 
-https://github.com/TiLied/GenDocsLib
+CLI for library: https://github.com/TiLied/CSTOJS_CLI
+  
+Website/documentation: https://github.com/TiLied/CSTOJS_Pages
+- Blazor WebAssembly: https://github.com/TiLied/CSTOJS_BWA
