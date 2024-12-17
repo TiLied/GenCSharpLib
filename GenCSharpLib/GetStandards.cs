@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net.Http;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 
@@ -9,7 +10,8 @@ namespace GenCSharpLib
 {
 	public class GetStandards : ILog
 	{
-		private readonly ILog? _Log = null;
+		private readonly ILog _Log;
+
 		private readonly HttpClient _Client = new();
 
 		public GetStandards()
@@ -50,7 +52,7 @@ namespace GenCSharpLib
 				HttpResponseMessage response2 = await _Client.GetAsync(matchCollectionHT.Groups[1].Value);
 
 				string path = Path.Combine(outPutPath, file);
-				_Log?.WriteLine("Path: " + path);
+				_Log.WriteLine("Path: " + path);
 
 				if (response2.IsSuccessStatusCode)
 				{
@@ -58,22 +60,27 @@ namespace GenCSharpLib
 
 					await File.WriteAllTextAsync(path, str);
 
-					_Log?.WriteLine("Success!");
+					_Log.WriteLine("Success!");
 				}
 				else 
 				{
-					_Log?.WriteLine($"---Fail: {response2.StatusCode}");
+					_Log.WriteLine($"---Fail: {response2.StatusCode}");
 				}
-				_Log?.WriteLine("\n");
+				_Log.WriteLine("\n");
+
+				//
+				//There is no crawl-delay, so 1s per request.
+				//https://www.w3.org/robots.txt
+				Thread.Sleep(1000);
 			}
 
-			_Log?.WriteLine("Done!");
+			_Log.WriteLine("Done!");
 		}
 		public async Task GetWebIdl(string path) 
 		{
 			if (!Directory.Exists(path))
 			{
-				_Log?.WriteLine("No directory: " + path);
+				_Log.WriteLine("No directory: " + path);
 				return;
 			}
 			string webidlPath = Path.Combine(path, "webidl");
@@ -95,7 +102,7 @@ namespace GenCSharpLib
 
 			foreach (FileInfo fileInfo in fileInfos) 
 			{
-				_Log?.WriteLine(fileInfo.FullName);
+				_Log.WriteLine(fileInfo.FullName);
 				using (var stream = File.OpenRead(fileInfo.FullName))
 				{
 					using (StreamReader reader = new(stream))
@@ -112,8 +119,8 @@ namespace GenCSharpLib
 
 							if (webidl == "") 
 							{
-								_Log?.WriteLine("---Webidl is empty");
-								_Log?.WriteLine("\n");
+								_Log.WriteLine("---Webidl is empty");
+								_Log.WriteLine("\n");
 								continue;
 							}
 
@@ -121,11 +128,11 @@ namespace GenCSharpLib
 
 							await File.WriteAllTextAsync(path2, webidl);
 
-							_Log?.WriteLine("Webidl generated: " + path2);
+							_Log.WriteLine("Webidl generated: " + path2);
 						}
 						else 
 						{
-							_Log?.WriteLine("---NO webidl index!");
+							_Log.WriteLine("---NO webidl index!");
 
 							Regex regexPre = new(@"<pre class=""?idl""?>([\s\S]+?)</pre>");
 
@@ -147,8 +154,8 @@ namespace GenCSharpLib
 								string path2 = Path.Combine(webidlPath, fileInfo.Name + ".webidl");
 								await File.WriteAllTextAsync(path2, webidl);
 
-								_Log?.WriteLine("Webidl with no index! generated: " + path2);
-								_Log?.WriteLine("\n");
+								_Log.WriteLine("Webidl with no index! generated: " + path2);
+								_Log.WriteLine("\n");
 								continue;
 							}
 
@@ -194,7 +201,7 @@ namespace GenCSharpLib
 								string path2 = Path.Combine(webidlPath, fileInfo.Name + ".webidl");
 								await File.WriteAllTextAsync(path2, webidl);
 
-								_Log?.WriteLine("Webidl with no index! generated: " + path2);
+								_Log.WriteLine("Webidl with no index! generated: " + path2);
 							}
 							
 
@@ -202,10 +209,10 @@ namespace GenCSharpLib
 
 					}
 				}
-				_Log?.WriteLine("\n");
+				_Log.WriteLine("\n");
 			}
 
-			_Log?.WriteLine("Done!");
+			_Log.WriteLine("Done!");
 		}
 	}
 }
