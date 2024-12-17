@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.IO;
 using System.Runtime.CompilerServices;
 
 namespace GenCSharpLib
@@ -17,7 +18,7 @@ namespace GenCSharpLib
 
 		public void WriteLine(string message, [CallerFilePath] string? file = null, [CallerMemberName] string? member = null, [CallerLineNumber] int line = 0)
 		{
-			Trace.WriteLine($"({line}):{Path.GetFileName(file)} {member}: {message}");
+			Trace.WriteLine($"({line}):{Path.GetFileName(file.Replace("\\", "/"))} {member}: {message}");
 		}
 	}
 }
