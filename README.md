@@ -6,13 +6,13 @@ This library is related to [CSharpToJavaScript](https://github.com/TiLied/CSharp
 GetStandards getStandards = new();
 await getStandards.GetThroughWeb("FULL STANDARDS OUTPUT PATH");	
 ```
-- Add any missing standards with extension "raw.txt" in "FULL STANDARDS OUTPUT PATH", like [console](https://console.spec.whatwg.org/) etc.
+- Add any missing standards with the extension "raw.txt" as html file in "FULL STANDARDS OUTPUT PATH", like all from [whatwg](https://github.com/whatwg) etc.
 - Convert "raw.txt" to webidl only:
 ```csharp
 GetStandards getStandards = new();
 await getStandards.GetWebIdl("FULL STANDARDS OUTPUT PATH");
 ```
-- Convert webidl to json files using [webidl2.js](https://github.com/w3c/webidl2.js/). This step requires a lot of manual editing!
+- Convert webidl to json files using [webidl2.js](https://github.com/w3c/webidl2.js/). This step requires a lot of manual editing, like deleting old versions.
 - Make sure that json starts with :
 ```
 {
