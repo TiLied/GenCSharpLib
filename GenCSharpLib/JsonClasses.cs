@@ -35,7 +35,7 @@ namespace GenCSharpLib
 
 		public WebIDLType() { }
 
-		public static bool Equals(WebIDLType obj)
+		public static bool EqualsTest(WebIDLType obj)
 		{
 			//Check for null and compare run-time types.
 			if (obj.Nullable == null &&
@@ -241,7 +241,7 @@ namespace GenCSharpLib
 					if (array == true)
 					{
 						//TODO?
-						if (WebIDLType.Equals(list.Last()))
+						if (WebIDLType.EqualsTest(list.Last()))
 							list.RemoveAt(list.Count - 1);
 
 						return list;
