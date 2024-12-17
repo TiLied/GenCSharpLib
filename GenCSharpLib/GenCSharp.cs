@@ -27,7 +27,7 @@ namespace GenCSharpLib
 			Trace.Listeners.Add(new ConsoleTraceListener());
 		}
 
-		public async void GenerateCSFromJson(string path, string output)
+		public async Task GenerateCSFromJson(string path, string output)
 		{
 			string jsonString = File.ReadAllText(path);
 			
@@ -228,7 +228,7 @@ namespace GenCSharpLib
 					return;
 				case "enum":
 					{
-						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{tType.Name}/*'/>");
+						sb.AppendLine($"///<include file='Utils/Docs/{tType.Name}/{tType.Name}.generated.xml' path='docs/{tType.Name}/*'/>");
 						sb.Append($"public enum {tType.Name}");
 						sb.AppendLine();
 						sb.Append("{");
@@ -250,7 +250,7 @@ namespace GenCSharpLib
 				case "callback interface":
 				case "interface mixin":
 					{
-						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{tType.Name}/*'/>");
+						sb.AppendLine($"///<include file='Utils/Docs/{tType.Name}/{tType.Name}.generated.xml' path='docs/{tType.Name}/*'/>");
 						string exist = _ListNamesForToAttr.Find(e => e == tType.Name);
 						if (exist == null)
 						{
@@ -298,11 +298,13 @@ namespace GenCSharpLib
 				case "interface":
 				case "dictionary":
 					{
-						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{tType.Name}/*'/>");
+						sb.AppendLine($"///<include file='Utils/Docs/{tType.Name}/{tType.Name}.generated.xml' path='docs/{tType.Name}/*'/>");
 						string exist = _ListNamesForToAttr.Find(e => e == tType.Name);
 						if (exist == null)
 						{
-							if (tType.Name.StartsWith("HTML") || tType.Name.StartsWith("Text"))
+							if (tType.Name.StartsWith("HTML") || 
+								tType.Name.StartsWith("Text") || 
+								tType.Name == "Window")
 							{
 								sb.AppendLine($"[To(ToAttribute.Default)]");
 								_DefaultTrue = true;
@@ -353,7 +355,7 @@ namespace GenCSharpLib
 					}
 				case "callback":
 					{
-						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{tType.Name}/*'/>");
+						sb.AppendLine($"///<include file='Utils/Docs/{tType.Name}/{tType.Name}.generated.xml' path='docs/{tType.Name}/*'/>");
 						string exist = _ListNamesForToAttr.Find(e => e == tType.Name);
 						if (exist == null) 
 						{
@@ -537,7 +539,8 @@ namespace GenCSharpLib
 			{
 				case "attribute": 
 					{
-						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{_CurrentTType.Name + member.Name.FirstCharToUpperCase()}/*'/>");
+						string _name = _CurrentTType.Name + member.Name.FirstCharToUpperCase();
+						sb.AppendLine($"///<include file='Utils/Docs/{_name}/{_name}.generated.xml' path='docs/{_name}/*'/>");
 						if (_DefaultTrue)
 						{
 							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
@@ -592,7 +595,8 @@ namespace GenCSharpLib
 					}
 				case "const": 
 					{
-						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{_CurrentTType.Name + member.Name.FirstCharToUpperCase()}/*'/>");
+						string _name = _CurrentTType.Name + member.Name.FirstCharToUpperCase();
+						sb.AppendLine($"///<include file='Utils/Docs/{_name}/{_name}.generated.xml' path='docs/{_name}/*'/>");
 						if (_DefaultTrue)
 						{
 							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
@@ -612,7 +616,8 @@ namespace GenCSharpLib
 					}
 				case "field":
 					{
-						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{_CurrentTType.Name + member.Name.FirstCharToUpperCase()}/*'/>");
+						string _name = _CurrentTType.Name + member.Name.FirstCharToUpperCase();
+						sb.AppendLine($"///<include file='Utils/Docs/{_name}/{_name}.generated.xml' path='docs/{_name}/*'/>");
 						if (_DefaultTrue)
 						{
 							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
@@ -641,7 +646,7 @@ namespace GenCSharpLib
 					}
 				case "constructor": 
 					{
-						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{_CurrentTType.Name}{_CurrentTType.Name}/*'/>");
+						sb.AppendLine($"///<include file='Utils/Docs/{_CurrentTType.Name}{_CurrentTType.Name}/{_CurrentTType.Name}{_CurrentTType.Name}.generated.xml' path='docs/{_CurrentTType.Name}{_CurrentTType.Name}/*'/>");
 						sb.Append("\t");
 						sb.Append($"public ");
 
@@ -671,7 +676,8 @@ namespace GenCSharpLib
 							member.Special == "deleter")
 							return;
 
-						sb.AppendLine($"///<include file='Utils/Docs.generated.xml' path='docs/{_CurrentTType.Name + member.Name.FirstCharToUpperCase()}/*'/>");
+						string _name = _CurrentTType.Name + member.Name.FirstCharToUpperCase();
+						sb.AppendLine($"///<include file='Utils/Docs/{_name}/{_name}.generated.xml' path='docs/{_name}/*'/>");
 						if (_DefaultTrue)
 						{
 							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
