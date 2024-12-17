@@ -1,7 +1,7 @@
 # GenCSharpLib
 This library is related to [CSharpToJavaScript](https://github.com/TiLied/CSharpToJavaScript) for generating c# files.
 ## How to use
-- Convert webidl to json files from https://github.com/w3c/webidl2.js/
+- Convert webidl to json files using [webidl2.js](https://github.com/w3c/webidl2.js/)
 - Add in Main Method:
 ```csharp
 GenCSharp genCSharp = new();
