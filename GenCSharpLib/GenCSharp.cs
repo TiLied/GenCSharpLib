@@ -21,11 +21,19 @@ namespace GenCSharpLib
 		private List<string> _ListNamesWithDefaultAttr = new();
 		private List<TType> _ListOfTypeDefs = new();
 
-		//Do I need this?
-		private readonly List<string> _ECMATypes = new() { "Date", "Math", "Object", "RegExp", "Number" };
-
-
 		private bool _OneForDOMParser = false;
+
+		//
+		//0 = Typedef. Needs to be in every other StringBuilder!
+		//1 = Enums.
+		//2 = Interfaces.
+		//3 = Classes. TODO! Seperate to multiple files!
+		//4 = Structs.
+		//5 = Uinion structs.
+		//
+		private StringBuilder[] _SB = new StringBuilder[6];
+		private int _SBIndex = 0;
+
 		public GenCSharp()
 		{
 			_Log = this;
@@ -42,28 +50,6 @@ namespace GenCSharpLib
 			Welcome? welcome = JsonSerializer.Deserialize<Welcome>(jsonString, serializeOptions);
 
 			_Main = welcome ?? new();
-
-			StringBuilder sb = new();
-			sb.AppendLine($"//{DateTime.Now}");
-
-			sb.AppendLine("using static CSharpToJavaScript.APIs.JS.GlobalObject;");
-			sb.AppendLine("using CSharpToJavaScript.Utils;");
-			sb.AppendLine("using System.Collections.Generic;");
-			sb.AppendLine("using System.Threading.Tasks;");
-			sb.AppendLine();
-			sb.AppendLine($"namespace CSharpToJavaScript.APIs.JS;");
-			sb.AppendLine();
-
-			sb.AppendLine("//");
-
-			sb.AppendLine("using WindowProxy = Window;");
-			sb.AppendLine("using USVString = string;");
-			sb.AppendLine("using ByteString = string;");
-			sb.AppendLine("using DOMString = string;");
-			
-			sb.AppendLine("//");
-
-			sb.AppendLine();
 
 			//
 			//
@@ -106,24 +92,55 @@ namespace GenCSharpLib
 				}
 			}
 
-			for (int i = 0; i < length; i++)
+			_SB[0] = new();
+			_SB[0].AppendLine($"//{DateTime.Now}");
+			_SB[0].AppendLine();
+			_SB[0].AppendLine("using static CSharpToJavaScript.APIs.JS.GlobalObject;");
+			_SB[0].AppendLine("using CSharpToJavaScript.Utils;");
+			_SB[0].AppendLine("using System.Collections.Generic;");
+			_SB[0].AppendLine("using System.Threading.Tasks;");
+			_SB[0].AppendLine();
+			_SB[0].AppendLine($"namespace CSharpToJavaScript.APIs.JS;");
+			_SB[0].AppendLine();
+			_SB[0].AppendLine("//");
+
+			_SB[0].AppendLine("using WindowProxy = Window;");
+			_SB[0].AppendLine("using USVString = string;");
+			_SB[0].AppendLine("using ByteString = string;");
+			_SB[0].AppendLine("using DOMString = string;");
+
+			_SB[0].AppendLine("//");
+
+			_SB[0].AppendLine();
+
+			for (int j = 0; j < length; j++)
 			{
-				ResolveTypeDef(ref sb, _Main.TType[i]);
+				ResolveTypeDef(ref _SB[0], _Main.TType[j]);
 			}
-			
-			sb.AppendLine();
+			_SB[0].AppendLine();
+
+			for (int i = 1; i < _SB.Length; i++)
+			{
+				_SB[i] = new();
+				_SB[i].Append(_SB[0]);
+				_SB[i].AppendLine();
+			}
+
 			
 			foreach (TType item in _Main.TType)
 			{
-				ProcessTType(ref sb, item);
-				sb.AppendLine();
+				ProcessTType(item);
+				_SB[_SBIndex].AppendLine();
 			}
 
-			if(File.Exists(Path.Combine(output, "JS.generated.cs")))
-				await File.WriteAllTextAsync(Path.Combine(output, "JS1.generated.cs"), sb.ToString());
-			else
-				await File.WriteAllTextAsync(Path.Combine(output, "JS.generated.cs"), sb.ToString());
-			
+			for (int i = 1; i < _SB.Length; i++)
+			{
+				if (File.Exists(Path.Combine(output, $"JS{i}.generated.cs")))
+					await File.WriteAllTextAsync(Path.Combine(output, $"JS{i}{i}.generated.cs"), _SB[i].ToString());
+				else
+					await File.WriteAllTextAsync(Path.Combine(output, $"JS{i}.generated.cs"), _SB[i].ToString());
+			}
+
 			_Log.WriteLine("--- Done!");
 		}
 		
@@ -270,7 +287,7 @@ namespace GenCSharpLib
 			return localTT.Name;
 		}
 
-		private void ProcessTType(ref StringBuilder sb, TType tType)
+		private void ProcessTType(TType tType)
 		{
 			_CurrentTType = tType;
 
@@ -281,134 +298,138 @@ namespace GenCSharpLib
 					return;
 				case "enum":
 					{
-						AddXmlRef(ref sb, tType.Name);
-						sb.AppendLine($"[To(ToAttribute.None)]");
-						sb.Append($"public enum {tType.Name}");
-						sb.AppendLine();
-						sb.Append("{");
-						sb.AppendLine();
+						_SBIndex = 1;
+						AddXmlRef(tType.Name);
+						_SB[_SBIndex].AppendLine($"[To(ToAttribute.None)]");
+						_SB[_SBIndex].Append($"public enum {tType.Name}");
+						_SB[_SBIndex].AppendLine();
+						_SB[_SBIndex].Append("{");
+						_SB[_SBIndex].AppendLine();
 
 						foreach (Value val in tType.Values)
 						{
-							sb.Append("\t");
-							sb.AppendLine($"[Value(\"{val.ValueObj.ToString()}\")]");
-							sb.Append("\t");
-							ProcessValue(ref sb, val);
-							sb.Append(",");
-							sb.AppendLine();
+							_SB[_SBIndex].Append("\t");
+							_SB[_SBIndex].AppendLine($"[EnumValue(\"{val.ValueObj.ToString()}\")]");
+							_SB[_SBIndex].Append("\t");
+							ProcessValue(val);
+							_SB[_SBIndex].Append(",");
+							_SB[_SBIndex].AppendLine();
 						}
 
-						sb.Append("}");
-						sb.AppendLine();
+						_SB[_SBIndex].Append("}");
+						_SB[_SBIndex].AppendLine();
 
 						break;
 					}
 				case "callback interface":
 				case "interface mixin":
 					{
-						AddXmlRef(ref sb, tType.Name);
-						string exist = _ListNamesForToAttr.Find(e => e == tType.Name);
+						_SBIndex = 2;
+						AddXmlRef(tType.Name);
+						string? exist = _ListNamesForToAttr.Find(e => e == tType.Name);
 						if (exist == null)
 						{
-							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
+							_SB[_SBIndex].AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
 							_ListNamesForToAttr.Add(tType.Name);
 						}
-						sb.Append($"public partial interface {tType.Name}");
+						_SB[_SBIndex].Append($"public partial interface {tType.Name}");
 						if (tType.Inheritance != null)
 						{
-							sb.Append($" : ");
-							TType arrL =  _Main.TType.Find((e) => e.Name == tType.Inheritance);
-							bool nameMatch = _ECMATypes.Contains(tType.Inheritance);
-							if (arrL != null || nameMatch)
-								sb.Append($"{tType.Inheritance}");
+							_SB[_SBIndex].Append($" : ");
+							TType? arrL =  _Main.TType.Find((e) => e.Name == tType.Inheritance);
+
+							if (arrL != null)
+								_SB[_SBIndex].Append($"{tType.Inheritance}");
 							if (tType.ListAdditionalInheritance.Count != 0)
 							{
-								if (arrL != null || nameMatch)
-									sb.Append($", ");
+								if (arrL != null)
+									_SB[_SBIndex].Append($", ");
 								foreach (TType item in tType.ListAdditionalInheritance)
 								{
-									sb.Append($"{item.Name}, ");
+									_SB[_SBIndex].Append($"{item.Name}, ");
 								}
-								sb = sb.Remove(sb.Length - 2, 2);
+								_SB[_SBIndex] = _SB[_SBIndex].Remove(_SB[_SBIndex].Length - 2, 2);
 							}
 							else if (arrL == null)
 							{
-								sb = sb.Remove(sb.Length - 3, 3);
+								_SB[_SBIndex] = _SB[_SBIndex].Remove(_SB[_SBIndex].Length - 3, 3);
 							}
 						}
-						sb.AppendLine();
-						sb.Append("{");
-						sb.AppendLine();
+						_SB[_SBIndex].AppendLine();
+						_SB[_SBIndex].Append("{");
+						_SB[_SBIndex].AppendLine();
 
 						foreach (Member mem in tType.Members)
 						{
-							sb.Append("\t");
-							ProcessMember(ref sb, mem);
-							sb.AppendLine();
+							_SB[_SBIndex].Append("\t");
+							ProcessMember(mem);
+							_SB[_SBIndex].AppendLine();
 						}
 
-						sb.Append("}");
-						sb.AppendLine();
+						_SB[_SBIndex].Append("}");
+						_SB[_SBIndex].AppendLine();
 						break;
 					}
 				case "namespace":
 				case "interface":
 				case "dictionary":
 					{
+						_SBIndex = 3;
 						if (tType.Name == "console")
-							AddXmlRef(ref sb, tType.Name.FirstCharToUpperCase());
+							AddXmlRef(tType.Name.FirstCharToUpperCase());
 						else
-							AddXmlRef(ref sb, tType.Name);
+							AddXmlRef(tType.Name);
 
-						string exist = _ListNamesForToAttr.Find(e => e == tType.Name);
+						string? exist = _ListNamesForToAttr.Find(e => e == tType.Name);
 						if (exist == null)
 						{
 							if (tType.Name.StartsWith("HTML") ||
 								tType.Name.StartsWith("Text") ||
+								tType.Name.StartsWith("CSS") ||
 								tType.Name == "Window" ||
 								tType.Name == "CustomEvent")
 							{
-								sb.AppendLine($"[To(ToAttribute.Default)]");
+								_SB[_SBIndex].AppendLine($"[To(ToAttribute.Default)]");
 								_ListNamesWithDefaultAttr.Add(tType.Name);
 							}
 							else
-								sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
+								_SB[_SBIndex].AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
 
 							_ListNamesForToAttr.Add(tType.Name);
 						}
-						sb.Append($"public partial class {tType.Name}");
+						_SB[_SBIndex].Append($"public partial class {tType.Name}");
 						if (tType.Inheritance != null)
 						{
-							sb.Append($" : ");
+							_SB[_SBIndex].Append($" : ");
 							TType arrL = _Main.TType.Find((e) => e.Name == tType.Inheritance);
-							bool nameMatch = _ECMATypes.Contains(tType.Inheritance);
-							if (arrL != null || nameMatch)
-								sb.Append($"{tType.Inheritance}");
+
+							if (arrL != null)
+								_SB[_SBIndex].Append($"{tType.Inheritance}");
 							
 							if (tType.ListAdditionalInheritance.Count != 0)
 							{
-								if (arrL != null || nameMatch)
-									sb.Append($", ");
+								if (arrL != null)
+									_SB[_SBIndex].Append($", ");
 								foreach (TType item in tType.ListAdditionalInheritance)
 								{
-									sb.Append($"{item.Name}, ");
+									_SB[_SBIndex].Append($"{item.Name}, ");
 								}
-								sb = sb.Remove(sb.Length - 2, 2);
+								_SB[_SBIndex] = _SB[_SBIndex].Remove(_SB[_SBIndex].Length - 2, 2);
 							}
 							else if (arrL == null)
 							{
-								sb = sb.Remove(sb.Length - 3, 3);
+								_SB[_SBIndex] = _SB[_SBIndex].Remove(_SB[_SBIndex].Length - 3, 3);
 							}
 						}
-						sb.AppendLine();
-						sb.Append("{");
-						sb.AppendLine();
+						_SB[_SBIndex].AppendLine();
+						_SB[_SBIndex].Append("{");
+						_SB[_SBIndex].AppendLine();
 
 						foreach (Member mem in tType.Members)
 						{
-							sb.Append("\t");
-							ProcessMember(ref sb, mem);
-							sb.AppendLine();
+							_SB[_SBIndex].Append("\t");
+							ProcessMember(mem);
+							_SB[_SBIndex].AppendLine();
 						}
 
 							foreach (Member mem in tType.Members)
@@ -419,79 +440,65 @@ namespace GenCSharpLib
 										break;
 									if (mem.Arguments.Count >= 1)
 									{
-										sb.Append("\t");
-										sb.Append($"public {_CurrentTType.Name}() {{ }}");
-										sb.AppendLine();
+										_SB[_SBIndex].Append("\t");
+										_SB[_SBIndex].Append($"public {_CurrentTType.Name}() {{ }}");
+										_SB[_SBIndex].AppendLine();
 										break;
 									}
 								}
 							}
 						
 
-						sb.Append("}");
-						sb.AppendLine();
+						_SB[_SBIndex].Append("}");
+						_SB[_SBIndex].AppendLine();
 						break;
 					}
 				case "callback":
 					{
-						AddXmlRef(ref sb, tType.Name);
+						_SBIndex = 4;
+						AddXmlRef(tType.Name);
 						string exist = _ListNamesForToAttr.Find(e => e == tType.Name);
 						if (exist == null) 
 						{
-							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
+							_SB[_SBIndex].AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
 							_ListNamesForToAttr.Add(tType.Name);
 						}
-						sb.Append($"public struct {tType.Name}");
-						sb.AppendLine();
-						sb.Append("{");
-						sb.AppendLine();
+						_SB[_SBIndex].Append($"public struct {tType.Name}");
+						_SB[_SBIndex].AppendLine();
+						_SB[_SBIndex].Append("{");
+						_SB[_SBIndex].AppendLine();
 
 						//TODO Action ?
 
-						sb.Append("}");
-						sb.AppendLine();
+						_SB[_SBIndex].Append("}");
+						_SB[_SBIndex].AppendLine();
 						break;
 					}
 				case "UnionStruct":
 					{
+						_SBIndex = 5;
 						//
 						//
 						//TODO! better!
 
 						StringBuilder _lsb = new();
 
-						sb.Append($"///<summary>");
-						sb.AppendLine();
-						sb.Append($"///");
+						_SB[_SBIndex].Append($"///<summary>");
+						_SB[_SBIndex].AppendLine();
+						_SB[_SBIndex].Append($"///");
 						foreach (Member member in tType.Members)
 						{
 							foreach (WebIDLType item in member.IDLType)
 							{
-								if (item.IDLTypeStr != null)
-								{
-									_lsb.Append($"<see cref=\"");
-									ProcessWebIDLType(ref _lsb, item);
+								_lsb.Append($"<see cref=\"");
+								ProcessWebIDLType(ref _lsb, item);
 
-									string _str = _lsb.ToString();
-									if (_str.EndsWith("[]"))
-									{
-										_lsb.Remove(_lsb.Length - 2, 2);
-									}
-									_lsb.Append($"\"/");
-								}
-								else 
+								string _str = _lsb.ToString();
+								if (_str.EndsWith("[]"))
 								{
-									_lsb.Append($"<c>");
-									ProcessWebIDLType(ref _lsb, item);
-									string _str = _lsb.ToString();
-									if (_str.EndsWith("[]"))
-									{
-										_lsb.Remove(_lsb.Length - 2, 2);
-									}
-									_lsb.Append($"</c");
+									_lsb.Remove(_lsb.Length - 2, 2);
 								}
-
-								_lsb.Append($"> or ");
+								_lsb.Append($"\"/> or ");
 							}
 						}
 						_lsb.Replace("<", "{");
@@ -501,22 +508,22 @@ namespace GenCSharpLib
 						_lsb.Replace("{c}", "<c>");
 						_lsb.Replace("{/c}", "</c>");
 
-						sb.Append(_lsb.ToString());
-						sb.Remove(sb.Length - 4, 4);
-						sb.AppendLine();
-						sb.Append($"///</summary>");
+						_SB[_SBIndex].Append(_lsb.ToString());
+						_SB[_SBIndex].Remove(_SB[_SBIndex].Length - 4, 4);
+						_SB[_SBIndex].AppendLine();
+						_SB[_SBIndex].Append($"///</summary>");
 
 
 
-						sb.AppendLine();
-						sb.Append($"public struct {tType.Name}");
-						sb.AppendLine();
-						sb.Append("{");
-						sb.AppendLine();
+						_SB[_SBIndex].AppendLine();
+						_SB[_SBIndex].Append($"public struct {tType.Name}");
+						_SB[_SBIndex].AppendLine();
+						_SB[_SBIndex].Append("{");
+						_SB[_SBIndex].AppendLine();
 
-						sb.Append("\t");
-						sb.Append("public dynamic Value { get; set; }");
-						sb.AppendLine();
+						_SB[_SBIndex].Append("\t");
+						_SB[_SBIndex].Append("public dynamic Value { get; set; }");
+						_SB[_SBIndex].AppendLine();
 
 						bool oneUnsupported = false;
 						
@@ -540,12 +547,12 @@ namespace GenCSharpLib
 								}
 							}
 
-							sb.Append("\t");
-							ProcessMember(ref sb, member);
-							sb.AppendLine();
+							_SB[_SBIndex].Append("\t");
+							ProcessMember(member);
+							_SB[_SBIndex].AppendLine();
 						}
-						sb.Append("}");
-						sb.AppendLine();
+						_SB[_SBIndex].Append("}");
+						_SB[_SBIndex].AppendLine();
 
 						break;
 					}
@@ -555,7 +562,7 @@ namespace GenCSharpLib
 			}
 		}
 
-		private void ProcessValue(ref StringBuilder sb, Value value)
+		private void ProcessValue(Value value)
 		{
 			switch (value.Type)
 			{
@@ -616,13 +623,13 @@ namespace GenCSharpLib
 						{
 							_str = _str.Replace(".", "_");
 						}
-						sb.Append(_str.FirstCharToUpperCase());
+						_SB[_SBIndex].Append(_str.FirstCharToUpperCase());
 						break;
 					}
 				case "number": 
 					{
 						string _str = value.ValueObj.ToString();
-						sb.Append(_str);
+						_SB[_SBIndex].Append(_str);
 						break;
 					}
 				default:
@@ -631,35 +638,35 @@ namespace GenCSharpLib
 			}
 		}
 
-		private void ProcessMember(ref StringBuilder sb, Member member) 
+		private void ProcessMember(Member member) 
 		{
 			switch (member.Type) 
 			{
 				case "attribute": 
 					{
 						string _name = _CurrentTType.Name + member.Name.FirstCharToUpperCase();
-						AddXmlRef(ref sb, _name);
+						AddXmlRef(_name);
 
 						string exist = _ListNamesWithDefaultAttr.Find(e => e == _CurrentTType.Name);
 						if (exist != null)
 						{
-							sb.Append("\t");
-							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
+							_SB[_SBIndex].Append("\t");
+							_SB[_SBIndex].AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
 						}
-						sb.Append("\t");
+						_SB[_SBIndex].Append("\t");
 
-						sb.Append($"public ");
+						_SB[_SBIndex].Append($"public ");
 
 						if (member.Special == "static")
 						{
-							sb.Append($"static ");
+							_SB[_SBIndex].Append($"static ");
 						}
 
 						if (member.Required != null)
 							if (member.Required! == true)
-								sb.Append("required ");
+								_SB[_SBIndex].Append("required ");
 
-						ProcessWebIDLType(ref sb, member.IDLType.First());
+						ProcessWebIDLType(ref _SB[_SBIndex], member.IDLType.First());
 
 						string name = member.Name;
 
@@ -669,96 +676,97 @@ namespace GenCSharpLib
 						if (name.Contains('-'))
 							name = name.Replace("-", "_");
 
-						sb.Append($" {name.FirstCharToUpperCase()} ");
+						_SB[_SBIndex].Append($" {name.FirstCharToUpperCase()} ");
 
 						if (member.Readonly! == true)
 						{
 							if (_CurrentTType.Type == "callback interface" ||
 								_CurrentTType.Type == "interface mixin")
-								sb.Append("{ get { throw new System.NotImplementedException(); } }");
+								_SB[_SBIndex].Append("{ get { throw new System.NotImplementedException(); } }");
 							else
-								sb.Append("{ get; }");
+								_SB[_SBIndex].Append("{ get; }");
 						}
 						else
 						{
 							if (_CurrentTType.Type == "callback interface" ||
 								_CurrentTType.Type == "interface mixin")
-								sb.Append("{ get { throw new System.NotImplementedException(); } set { throw new System.NotImplementedException(); } }");
+								_SB[_SBIndex].Append("{ get { throw new System.NotImplementedException(); } set { throw new System.NotImplementedException(); } }");
 							else
-								sb.Append("{ get; set; }");
+								_SB[_SBIndex].Append("{ get; set; }");
 						}
 
 						/*
 						if (member.Default != null)
 						{
-							ProccesMemberDefault(ref sb, member.Default);
-							sb.Append(";");
+							ProccesMemberDefault(member.Default);
+							_SB[_SBIndex].Append(";");
 							break;
 						}*/
 
-						//sb.Append(";");
+						//_SB[_SBIndex].Append(";");
 						break;
 					}
 				case "const": 
 					{
 						string _name = _CurrentTType.Name + member.Name.FirstCharToUpperCase();
-						AddXmlRef(ref sb, _name);
+						AddXmlRef(_name);
 
 						string exist = _ListNamesWithDefaultAttr.Find(e => e == _CurrentTType.Name);
 						if (exist != null)
 						{
-							sb.Append("\t");
-							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
+							_SB[_SBIndex].Append("\t");
+							_SB[_SBIndex].AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
 						}
-						sb.Append("\t");
+						_SB[_SBIndex].Append("\t");
 
-						sb.Append($"public const ");
+						_SB[_SBIndex].Append($"public const ");
 
-						ProcessWebIDLType(ref sb, member.IDLType.First());
+						ProcessWebIDLType(ref _SB[_SBIndex], member.IDLType.First());
 
-						sb.Append($" {member.Name} = ");
+						_SB[_SBIndex].Append($" {member.Name} = ");
 
-						ProcessValue(ref sb, member.Value);
+						ProcessValue(member.Value);
 
-						sb.Append($";");
+						_SB[_SBIndex].Append($";");
 						break;
 					}
 				case "field":
 					{
 						string _name = _CurrentTType.Name + member.Name.FirstCharToUpperCase();
-						AddXmlRef(ref sb, _name);
+						AddXmlRef(_name);
 
 						string exist = _ListNamesWithDefaultAttr.Find(e => e == _CurrentTType.Name);
 						if (exist != null)
 						{
-							sb.Append("\t");
-							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
+							_SB[_SBIndex].Append("\t");
+							_SB[_SBIndex].AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
 						}
-						sb.Append("\t");
+						_SB[_SBIndex].Append("\t");
 
-						sb.Append($"public ");
+						_SB[_SBIndex].Append($"public ");
 
 						if (member.Required != null)
 							if (member.Required! == true)
-								sb.Append("required ");
+								_SB[_SBIndex].Append("required ");
 
-						ProcessWebIDLType(ref sb, member.IDLType.First());
+						ProcessWebIDLType(ref _SB[_SBIndex], member.IDLType.First());
 
-						sb.Append($" {member.Name.FirstCharToUpperCase()}");
+						_SB[_SBIndex].Append($" {member.Name.FirstCharToUpperCase()}");
 
 						/*
 						if (member.Default != null)
 						{
-							sb.Append(" = ");
-							ProccesMemberDefault(ref sb, member.Default);
+							_SB[_SBIndex].Append(" = ");
+							ProccesMemberDefault(member.Default);
 						}*/
 
-						sb.Append(";");
+						_SB[_SBIndex].Append(";");
 						break;
 					}
-				case "constructor": 
+				case "constructor":
 					{
-						if (_CurrentTType.Name == "DOMParser")
+						if (_CurrentTType.Name == "DOMParser" || 
+							_CurrentTType.Name == "CaptureController")
 						{
 							if (_OneForDOMParser == false)
 							{
@@ -770,24 +778,24 @@ namespace GenCSharpLib
 							}
 						}
 						string _name = _CurrentTType.Name + _CurrentTType.Name;
-						AddXmlRef(ref sb, _name);
-						sb.Append("\t");
-						sb.Append($"public ");
+						AddXmlRef(_name);
+						_SB[_SBIndex].Append("\t");
+						_SB[_SBIndex].Append($"public ");
 
-						sb.Append($"{_CurrentTType.Name}(");
+						_SB[_SBIndex].Append($"{_CurrentTType.Name}(");
 
 						if (member.Arguments.Count >= 1)
 						{
 							foreach (Argument item in member.Arguments)
 							{
-								ProcessArguments(ref sb, item);
-								sb.Append($", ");
+								ProcessArguments(item);
+								_SB[_SBIndex].Append($", ");
 							}
 
-							sb = sb.Remove(sb.Length - 2, 2);
+							_SB[_SBIndex] = _SB[_SBIndex].Remove(_SB[_SBIndex].Length - 2, 2);
 						}
 
-						sb.Append(") { }");
+						_SB[_SBIndex].Append(") { }");
 
 						break;
 					}
@@ -805,56 +813,56 @@ namespace GenCSharpLib
 							_name = _CurrentTType.Name.FirstCharToUpperCase() + member.Name.FirstCharToUpperCase();
 						else
 							_name =	_CurrentTType.Name + member.Name.FirstCharToUpperCase();
-						AddXmlRef(ref sb, _name);
+						AddXmlRef(_name);
 
 						string exist = _ListNamesWithDefaultAttr.Find(e => e == _CurrentTType.Name);
 						if (exist != null)
 						{
-							sb.Append("\t");
-							sb.AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
+							_SB[_SBIndex].Append("\t");
+							_SB[_SBIndex].AppendLine($"[To(ToAttribute.FirstCharToLowerCase)]");
 						}
-						sb.Append("\t");
+						_SB[_SBIndex].Append("\t");
 
-						sb.Append($"public ");
+						_SB[_SBIndex].Append($"public ");
 
 						if (member.Special == "static")
-							sb.Append($"static ");
+							_SB[_SBIndex].Append($"static ");
 
 						if (member.Async != null)
 						{
 							if (member.Async! == true)
 							{
-								sb.Append($"async ");
+								_SB[_SBIndex].Append($"async ");
 							}
 						}
-						ProcessWebIDLType(ref sb, member.IDLType.First());
+						ProcessWebIDLType(ref _SB[_SBIndex], member.IDLType.First());
 
-						sb.Append($" {member.Name.FirstCharToUpperCase()}(");
+						_SB[_SBIndex].Append($" {member.Name.FirstCharToUpperCase()}(");
 
 						if (member.Arguments.Count >= 1)
 						{
 							foreach (Argument item in member.Arguments)
 							{
-								ProcessArguments(ref sb, item);
-								sb.Append($", ");
+								ProcessArguments(item);
+								_SB[_SBIndex].Append($", ");
 							}
 
-							sb = sb.Remove(sb.Length - 2, 2);
+							_SB[_SBIndex] = _SB[_SBIndex].Remove(_SB[_SBIndex].Length - 2, 2);
 						}
 
-						sb.Append(") { throw new System.NotImplementedException(); }");
+						_SB[_SBIndex].Append(") { throw new System.NotImplementedException(); }");
 						break;
 					}
 				case "UnionStruct": 
 					{
 						foreach (WebIDLType item in member.IDLType)
 						{
-							sb.Append($"public static implicit operator {_CurrentTType.Name}(");
-							ProcessWebIDLType(ref sb, item);
-							sb.Append(" value)");
-							sb.Append("{");
-							sb.Append($"return new {_CurrentTType.Name} {{ Value = value }};");
-							sb.Append("}");
+							_SB[_SBIndex].Append($"public static implicit operator {_CurrentTType.Name}(");
+							ProcessWebIDLType(ref _SB[_SBIndex], item);
+							_SB[_SBIndex].Append(" value)");
+							_SB[_SBIndex].Append("{");
+							_SB[_SBIndex].Append($"return new {_CurrentTType.Name} {{ Value = value }};");
+							_SB[_SBIndex].Append("}");
 						}
 						break;
 					}
@@ -864,13 +872,13 @@ namespace GenCSharpLib
 						//
 						//foreach (WebIDLType item in member.IDLType)
 						//{
-						sb.Append($"public ");
-							ProcessWebIDLType(ref sb, member.IDLType?[0]);
-							sb.Append(" this[int i] ");
-							sb.Append(" { ");
-							sb.Append($" get {{ throw new System.NotImplementedException(); }} ");
-							sb.Append($" set {{ throw new System.NotImplementedException(); }} ");
-							sb.Append(" } ");
+						_SB[_SBIndex].Append($"public ");
+							ProcessWebIDLType(ref _SB[_SBIndex], member.IDLType?[0]);
+							_SB[_SBIndex].Append(" this[int i] ");
+							_SB[_SBIndex].Append(" { ");
+							_SB[_SBIndex].Append($" get {{ throw new System.NotImplementedException(); }} ");
+							_SB[_SBIndex].Append($" set {{ throw new System.NotImplementedException(); }} ");
+							_SB[_SBIndex].Append(" } ");
 						//}
 						break;
 					}
@@ -1148,7 +1156,7 @@ namespace GenCSharpLib
 						{
 							case "":
 								{
-									if (webIDLType.IDLTypeStr == null) 
+									if (webIDLType.IDLTypeStr == null)
 										sb.Append(ProcessString(webIDLType.IDLType.First().IDLTypeStr));
 									else
 										sb.Append(ProcessString(webIDLType.IDLTypeStr));
@@ -1234,19 +1242,19 @@ namespace GenCSharpLib
 			}
 		}
 
-		private void ProcessArguments(ref StringBuilder sb, Argument argument) 
+		private void ProcessArguments(Argument argument) 
 		{
 			switch (argument.Type)
 			{
 				case "argument":
 					{
 						if (argument.Variadic == true)
-							sb.Append($"params ");
+							_SB[_SBIndex].Append($"params ");
 
-						ProcessWebIDLType(ref sb, argument.IDLType.First());
+						ProcessWebIDLType(ref _SB[_SBIndex], argument.IDLType.First());
 
 						if (argument.Variadic == true)
-							sb.Append($"[]");
+							_SB[_SBIndex].Append($"[]");
 
 
 						if (argument.Name == "base" ||
@@ -1258,20 +1266,20 @@ namespace GenCSharpLib
 							argument.Name == "ref" ||
 							argument.Name == "params")
 						{
-							sb.Append($" {argument.Name}_");
+							_SB[_SBIndex].Append($" {argument.Name}_");
 						}
 						else
-							sb.Append($" {argument.Name}");
+							_SB[_SBIndex].Append($" {argument.Name}");
 
 						//
 						//if (argument.Optional == true)
-						//	sb.Append($" = null");
+						//	_SB[_SBIndex].Append($" = null");
 
 						if (argument.Default != null)
 						{
 							//TODO!
-							//sb.Append(" = ");
-							//ProccesMemberDefault(ref sb, memberArgument.Default);
+							//_SB[_SBIndex].Append(" = ");
+							//ProccesMemberDefault(memberArgument.Default);
 						}
 
 						break;
@@ -1338,8 +1346,7 @@ namespace GenCSharpLib
 			}
 			if (str.Contains("bigint"))
 			{
-				//TODO! BigInt!
-				str = "double";
+				str = "BigInt";
 				return str;
 			}
 			if (str == "ArrayBuffer")
@@ -1429,12 +1436,17 @@ namespace GenCSharpLib
 				return str;
 			}
 
-			
+			if (str == "object")
+			{
+				str = "Object";
+				return str;
+			}
+
 			if (char.IsUpper(str[0]) && en == false)
 			{
-				TType arrL = _Main.TType.Find((e) => e.Name == str);
-				bool nameMatch = _ECMATypes.Contains(str);
-				if (arrL == null && nameMatch == false)
+				TType? arrL = _Main.TType.Find((e) => e.Name == str);
+
+				if (arrL == null)
 				{
 					str = $"Unsupported /*{str}*/";
 				}
@@ -1442,7 +1454,7 @@ namespace GenCSharpLib
 				{
 					if (_CurrentTType.Type == "typedef")
 					{
-						TType typeDef = _ListOfTypeDefs.Find((e) => e.Name == str);
+						TType? typeDef = _ListOfTypeDefs.Find((e) => e.Name == str);
 						if (typeDef != null)
 						{
 							str = $"Unsupported /*{str}*/";
@@ -1454,7 +1466,7 @@ namespace GenCSharpLib
 			return str;
 		}
 
-		private void AddXmlRef(ref StringBuilder sb, string localName)
+		private void AddXmlRef(string localName)
 		{
 			string name = localName;
 
@@ -1483,9 +1495,9 @@ namespace GenCSharpLib
 			directory = directory.Replace("JS\\Generated", "");
 
 			if (File.Exists($"{directory}\\Docs2\\{name}\\{name}.xml"))
-				sb.AppendLine($"///<include file='Utils/Docs2/{name}/{name}.xml' path='docs/{name}/*'/>");
+				_SB[_SBIndex].AppendLine($"///<include file='Utils/Docs2/{name}/{name}.xml' path='docs/{name}/*'/>");
 			if (File.Exists($"{directory}\\Docs\\{name}\\{name}.generated.xml"))
-				sb.AppendLine($"///<include file='Utils/Docs/{name}/{name}.generated.xml' path='docs/{name}/*'/>");
+				_SB[_SBIndex].AppendLine($"///<include file='Utils/Docs/{name}/{name}.generated.xml' path='docs/{name}/*'/>");
 		}
 	}
 }
