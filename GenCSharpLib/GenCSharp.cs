@@ -29,7 +29,7 @@ namespace GenCSharpLib
 		//2 = Interfaces.
 		//3 = Classes. TODO! Seperate to multiple files!
 		//4 = Structs.
-		//5 = Uinion structs.
+		//5 = Union structs.
 		//
 		private StringBuilder[] _SB = new StringBuilder[6];
 		private int _SBIndex = 0;
@@ -1271,16 +1271,17 @@ namespace GenCSharpLib
 						else
 							_SB[_SBIndex].Append($" {argument.Name}");
 
-						//
-						//if (argument.Optional == true)
-						//	_SB[_SBIndex].Append($" = null");
-
-						if (argument.Default != null)
+						if (argument.Default != null || argument.Optional == true)
 						{
-							//TODO!
-							//_SB[_SBIndex].Append(" = ");
+							_SB[_SBIndex].Append(" = default");
 							//ProccesMemberDefault(memberArgument.Default);
 						}
+
+						//c# error: "Optional parameters must appear after all required parameters"
+						//See specs: https://gpuweb.github.io/gpuweb/#gpupipelineerror
+						//This one is an outsider, make it optional)
+						if (argument.IDLType[0].IDLTypeStr == "GPUPipelineErrorInit")
+							_SB[_SBIndex].Append(" = default");
 
 						break;
 					}
